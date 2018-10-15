@@ -51,6 +51,7 @@ struct Polinomio *sumaPol(struct Polinomio *polp, struct Polinomio *polq,int sig
 struct Polinomio *sumarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
 struct Polinomio *restarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
 
+void liberarMemoria(struct Polinomio *pol);
 long stringToLong(char *s);
 /**-----------------------------------------------FIN PROTOTIPOS------------------------------------------------------**/
 	
@@ -76,14 +77,16 @@ int main(unsigned int argc, char **argv){
 	copia=copiarPolinomio(polp);
 	imprimirPolinomio(copia);
 	printf("\nSuma de los polinomios: \n");
-	imprimirPolinomio(sumarPolinomios(polp,polq));
+	polSuma=sumarPolinomios(polp,polq);
+	imprimirPolinomio(polSuma);
 	printf("Resta de los polinomios (p1-p2): \n");
-	imprimirPolinomio(restarPolinomios(polp,polq));
-	free(polp);
-	free(polq);
-	free(polSuma);
-	free(polResta);
-	free(copia);
+	polResta=restarPolinomios(polp,polq);
+	imprimirPolinomio(polResta);
+	liberarMemoria(polp);
+	liberarMemoria(polq);
+	liberarMemoria(polSuma);
+	liberarMemoria(polResta);
+	liberarMemoria(copia);
 	return 0;
 }
 
@@ -341,6 +344,25 @@ struct Polinomio *restarPolinomios(struct Polinomio *polp, struct Polinomio *pol
 
 
 
+/**
+ * liberarMemoria:
+ * 
+ * Función que libera la memoria utilizada por una estructura de polinomio.
+ */
+void liberarMemoria(struct Polinomio *pol){
+	struct Polinomio *aux;
+	while(pol!=NULL){
+		aux=pol->sig;
+		free(pol->monomio);
+		free(pol);
+		pol=aux;
+	}
+	return;
+}
+
+
+
+
 
 long stringToLong(char *s){
     long suma=0;
@@ -349,4 +371,7 @@ long stringToLong(char *s){
         suma=(suma*10)+(s[i]-'0');
     return suma;
 }
+
+
+
 /**-----------------------------------------------FIN FUNCIONES-------------------------------------------------------**/
