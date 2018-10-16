@@ -44,12 +44,16 @@ struct Polinomio *generarPolinomio(long grdIt);
 void imprimirPolinomio(struct Polinomio *pol);
 
 struct Polinomio *copiarPolinomio(struct Polinomio *pol);
+struct Polinomio *copiarPartePolinomio(struct Polinomio *pol, long grdIn,long grdFin);
 struct Monomio *copiarMonomio(struct Monomio *mon);
 
 struct Monomio *sumaMons(struct Monomio *monp, struct Monomio *monq,int signo);
 struct Polinomio *sumaPol(struct Polinomio *polp, struct Polinomio *polq,int signo);
 struct Polinomio *sumarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
 struct Polinomio *restarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
+
+struct Polinomio *multiplicarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
+struct Polinomio *multiplicarMonomioPolinimio(struct Polinomio *pol,struct Monomio *mon);
 
 void liberarMemoria(struct Polinomio *pol);
 long stringToLong(char *s);
@@ -60,6 +64,7 @@ int main(unsigned int argc, char **argv){
 	struct Polinomio *polq=NULL;
 	struct Polinomio *polSuma=NULL;
 	struct Polinomio *polResta=NULL;
+	struct Polinomio *polMult=NULL;
 	struct Polinomio *copia=NULL;
 	long gradop=0;
 	long gradoq=0;
@@ -82,10 +87,14 @@ int main(unsigned int argc, char **argv){
 	printf("Resta de los polinomios (p1-p2): \n");
 	polResta=restarPolinomios(polp,polq);
 	imprimirPolinomio(polResta);
+	printf("\nMultiplicacion polinomio 1 por polinomio 2: \n");
+	polMult=multiplicarPolinomios(polp,polq);
+	imprimirPolinomio(polMult);
 	liberarMemoria(polp);
 	liberarMemoria(polq);
 	liberarMemoria(polSuma);
 	liberarMemoria(polResta);
+	liberarMemoria(polMult);
 	liberarMemoria(copia);
 	return 0;
 }
@@ -181,13 +190,14 @@ void imprimirPolinomio(struct Polinomio *pol){
 	struct Monomio *mon;
 	if(it!=NULL){
 		mon=it->monomio;
-		printf("%ldx^%ld",mon->coef,mon->grd);
+		if(mon->coef!=0)
+			printf("%ldx^%ld",mon->coef,mon->grd);
 		it=it->sig;
 		while(it!=NULL){
 			mon=it->monomio;
-			if(mon->coef>=0)
+			if(mon->coef>0)
 				printf("+%ldx^%ld",mon->coef,mon->grd);
-			else
+			else if(mon->coef<0)
 				printf("%ldx^%ld",mon->coef,mon->grd);
 			it=it->sig;
 		}
@@ -219,6 +229,24 @@ struct Polinomio *copiarPolinomio(struct Polinomio *pol){
 
 
 
+
+
+/**
+ * 
+ */
+struct Polinomio *copiarPartePolinomio(struct Polinomio *pol, long grdIn,long grdFin){
+	struct Polinomio *copia=NULL;
+	struct Monomio *mon=NULL;
+	while(pol!=NULL){
+		mon=pol->monomio;
+		if(mon->grd<=grdIn && mon->grd>=grdFin)
+			agregarMonomio(&copia,copiarMonomio(mon));
+		pol=pol->sig;
+		if(mon->grd<grdFin)
+			pol=NULL;
+	}
+	return copia;
+}
 
 
 
@@ -277,10 +305,14 @@ struct Monomio *sumaMons(struct Monomio *monp, struct Monomio *monq,int signo){
  */
 struct Polinomio *sumaPol(struct Polinomio *polp, struct Polinomio *polq,int signo){
 	struct Polinomio *acum=NULL;
-	long gradoMayor=polq->monomio->grd;
+	long gradoMayor=0;
 	struct Monomio *monp,*monq,*aux;
-	if(polp->monomio->grd>polq->monomio->grd)
-		gradoMayor=polp->monomio->grd;
+	if(polp!=NULL && polq!=NULL){
+		if(polp!=NULL)
+			gradoMayor=polp->monomio->grd;
+		if(polq!=NULL && polp->monomio->grd<polq->monomio->grd)
+			gradoMayor=polq->monomio->grd;
+	}
 	while(polp!=NULL && polq!=NULL){
 		monp=polp->monomio;
 		monq=polq->monomio;
@@ -319,6 +351,51 @@ struct Polinomio *sumaPol(struct Polinomio *polp, struct Polinomio *polq,int sig
 
 
 /**
+ * 
+ */ 
+struct Polinomio *multiplicarPolinomios(struct Polinomio *polp, struct Polinomio *polq){
+	struct Polinomio *suma=NULL;
+	struct Polinomio *acum=NULL;
+	struct Polinomio *aux=NULL;
+	while(polq!=NULL){
+		acum=suma;
+		aux=multiplicarMonomioPolinimio(polp,polq->monomio);
+		suma=sumarPolinomios(acum,aux);
+		liberarMemoria(aux);
+		liberarMemoria(acum);
+		polq=polq->sig;
+	}
+	return suma;
+}
+
+
+
+
+
+/**
+ * 
+ */
+struct Polinomio *multiplicarMonomioPolinimio(struct Polinomio *pol,struct Monomio *mon){
+	struct Polinomio *multiplicando=copiarPolinomio(pol);
+	struct Polinomio *iterador=multiplicando;
+	struct Monomio *aux;
+	while(iterador!=NULL){
+		aux=iterador->monomio;
+		if(aux!=NULL){
+			aux->coef*=mon->coef;
+			aux->grd+=mon->grd;
+		}
+		iterador=iterador->sig;
+	}
+	return multiplicando;
+}
+
+
+
+
+
+
+/**
  * sumarPolinomios:
  * 
  * Función que suma dos polinomios polp y polq, especificando el signo a la función sumaPol.
@@ -339,6 +416,8 @@ struct Polinomio *sumarPolinomios(struct Polinomio *polp, struct Polinomio *polq
 struct Polinomio *restarPolinomios(struct Polinomio *polp, struct Polinomio *polq){
 	return sumaPol(polp,polq,-1);
 }
+
+
 
 
 
