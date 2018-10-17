@@ -58,6 +58,9 @@ void sumarMonomioPolinomio(struct Polinomio **pol, struct Monomio *mon);
 struct Polinomio *multiplicarRYC(struct Polinomio *polp, struct Polinomio *polq);
 struct Polinomio *multiplicarMonomioPolinimio(struct Polinomio *pol,struct Monomio *mon);
 
+void multiplicarPorPotencia(struct Polinomio **pol, long grd);
+void multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,struct Polinomio **res);
+
 void liberarMemoria(struct Polinomio *pol);
 long stringToLong(char *s);
 /**-----------------------------------------------FIN PROTOTIPOS------------------------------------------------------**/
@@ -89,13 +92,18 @@ int main(int argc, char **argv){
 	imprimirPolinomio(polSuma);
 	printf("Resta de los polinomios (p1-p2): \n");
 	polResta=restarPolinomios(polp,polq);
-	imprimirPolinomio(polResta);*/
+	imprimirPolinomio(polResta);
 	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Fuerza bruta): \n");
 	polMult=multiplicarFB(polp,polq);
 	imprimirPolinomio(polMult);
-	liberarMemoria(polMult);
+	liberarMemoria(polMult);*/
 	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Red. y conquistar): \n");
 	polMult=multiplicarRYC(polp,polq);
+	imprimirPolinomio(polMult);
+	liberarMemoria(polMult);
+	polMult=NULL;
+	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Div. y conquistar): \n");
+	multiplicarDYC(polp,polq,&polMult);
 	imprimirPolinomio(polMult);
 	liberarMemoria(polp);
 	liberarMemoria(polq);
@@ -146,6 +154,8 @@ struct Polinomio *generarPolinomio(long grdIt){
  */
 void crearPolinomio(struct Polinomio **pol){
 	(*pol)=(struct Polinomio*) calloc(1,sizeof(struct Polinomio));
+	(*pol)->sig=NULL;
+	(*pol)->monomio=NULL;
 	return;
 }
 
@@ -171,6 +181,7 @@ void agregarMonomio(struct Polinomio **pol,struct Monomio *mon){
 		if(it->sig==NULL){
 			crearPolinomio(&(it->sig));
 			it->sig->monomio=mon;
+			it->sig->sig=NULL;
 			return;
 		}
 		else{
@@ -499,6 +510,87 @@ struct Polinomio *multiplicarMonomioPolinimio(struct Polinomio *pol,struct Monom
 		iterador=iterador->sig;
 	}
 	return multiplicando;
+}
+
+
+
+
+
+
+
+void multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,struct Polinomio **res){
+	struct Monomio *mon=NULL,*m1,*m2;
+	struct Polinomio *a1,*b1,*a0,*b0;
+	long np=0,nq=0;
+	if(polp->sig==NULL && polq->sig==NULL){
+		
+		mon=(struct Monomio*) calloc(1,sizeof(struct Monomio));
+		mon->coef=polp->monomio->coef*polq->monomio->coef;
+		mon->grd=polp->monomio->grd+polq->monomio->grd;
+		sumarMonomioPolinomio(res,mon);
+		return;
+	}
+	else{
+		np=polp->monomio->grd;
+		nq=polq->monomio->grd;
+		a1=copiarPartePolinomio(polp,np,np/2);
+		a0=copiarPartePolinomio(polp,np/2,0);
+		b1=copiarPartePolinomio(polq,nq,nq/2);
+		b0=copiarPartePolinomio(polq,nq/2,0);
+		if((np+1)%2==0 && (nq+1)%2==0){
+			multiplicarDYC(a1,b1,res);
+			multiplicarDYC(a1,b0,res);
+			multiplicarDYC(a0,b1,res);
+			multiplicarDYC(a0,b0,res);
+		}
+		else if((np+1)%2==0){
+			m1=a1->monomio;
+			m2=a0->monomio;
+			multiplicarDYC(a1,b1,res);
+			*(res)=sumarPolinomios(*res,multiplicarMonomioPolinimio(b0,m1));
+			multiplicarDYC(a1->sig,b0,res);
+			multiplicarDYC(a0,b1,res);
+			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(b0,m2)));
+			multiplicarDYC(a0->sig,b0,res);
+		}
+		else if((nq+1)%2==0){
+			m1=b1->monomio;
+			m2=b0->monomio;
+			multiplicarDYC(a1,b1,res);
+			multiplicarDYC(a1,b0,res);
+			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(a0,m1)));
+			multiplicarDYC(a0,b1->sig,res);
+			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(a0,m2)));
+			multiplicarDYC(a0,b0->sig,res);
+		}
+		else{
+			m1=a1->monomio;
+			m2=b1->monomio;
+			multiplicarDYC(a1,b1,res);
+			multiplicarDYC(a0,b0,res);
+			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(b0,m1)));
+			multiplicarDYC(a1->sig,b0,res);
+			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(a0,m2)));
+			multiplicarDYC(a0,b1->sig,res);
+		}
+	}
+	return;
+}
+
+
+
+
+
+/**
+ * 
+ */
+void multiplicarPorPotencia(struct Polinomio **pol, long grd){
+	struct Polinomio *it=*pol;
+	while(it!=NULL){
+		it->monomio->grd+=grd;
+		it=it->sig;
+	}
+	return;
 }
 
 
