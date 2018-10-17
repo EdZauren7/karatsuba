@@ -52,14 +52,17 @@ struct Polinomio *sumaPol(struct Polinomio *polp, struct Polinomio *polq,int sig
 struct Polinomio *sumarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
 struct Polinomio *restarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
 
-struct Polinomio *multiplicarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
+struct Polinomio *multiplicarFB(struct Polinomio *polp,struct Polinomio *polq);
+void sumarMonomioPolinomio(struct Polinomio **pol, struct Monomio *mon);
+
+struct Polinomio *multiplicarRYC(struct Polinomio *polp, struct Polinomio *polq);
 struct Polinomio *multiplicarMonomioPolinimio(struct Polinomio *pol,struct Monomio *mon);
 
 void liberarMemoria(struct Polinomio *pol);
 long stringToLong(char *s);
 /**-----------------------------------------------FIN PROTOTIPOS------------------------------------------------------**/
 	
-int main(unsigned int argc, char **argv){
+int main(int argc, char **argv){
 	struct Polinomio *polp=NULL;
 	struct Polinomio *polq=NULL;
 	struct Polinomio *polSuma=NULL;
@@ -78,7 +81,7 @@ int main(unsigned int argc, char **argv){
 	polq=generarPolinomio(gradoq);
 	printf("Polinomio 2: \n");
 	imprimirPolinomio(polq);
-	printf("Polinomio 1 (copia, ver código): \n");
+	/*printf("Polinomio 1 (copia, ver código): \n");
 	copia=copiarPolinomio(polp);
 	imprimirPolinomio(copia);
 	printf("\nSuma de los polinomios: \n");
@@ -86,9 +89,13 @@ int main(unsigned int argc, char **argv){
 	imprimirPolinomio(polSuma);
 	printf("Resta de los polinomios (p1-p2): \n");
 	polResta=restarPolinomios(polp,polq);
-	imprimirPolinomio(polResta);
-	printf("\nMultiplicacion polinomio 1 por polinomio 2: \n");
-	polMult=multiplicarPolinomios(polp,polq);
+	imprimirPolinomio(polResta);*/
+	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Fuerza bruta): \n");
+	polMult=multiplicarFB(polp,polq);
+	imprimirPolinomio(polMult);
+	liberarMemoria(polMult);
+	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Red. y conquistar): \n");
+	polMult=multiplicarRYC(polp,polq);
 	imprimirPolinomio(polMult);
 	liberarMemoria(polp);
 	liberarMemoria(polq);
@@ -232,7 +239,10 @@ struct Polinomio *copiarPolinomio(struct Polinomio *pol){
 
 
 /**
+ * copiarPartePolinomio:
  * 
+ * Función que retorna la copia de un polinomio desde el grado grdIn (mayor)
+ * hasta encontrar el grado grdFin (menor).
  */
 struct Polinomio *copiarPartePolinomio(struct Polinomio *pol, long grdIn,long grdFin){
 	struct Polinomio *copia=NULL;
@@ -350,19 +360,117 @@ struct Polinomio *sumaPol(struct Polinomio *polp, struct Polinomio *polq,int sig
 
 
 
+
 /**
+ * sumarMonomioPolinomio:
  * 
- */ 
-struct Polinomio *multiplicarPolinomios(struct Polinomio *polp, struct Polinomio *polq){
-	struct Polinomio *suma=NULL;
-	struct Polinomio *acum=NULL;
+ * Función que suma un monomio (mon) a un polinomio. La función posee 4 casos:
+ * 
+ * - Si pol es NULL, se asigna mon en la primera posicion.
+ * - Si se encuentra un monomio del mismo grado se suman los coeficientes.
+ * - Si se encuentra un monomio de menor grado, se inserta mon antes que él.
+ * - Si se llega al final de la lista, se agrega al final.
+ */
+void sumarMonomioPolinomio(struct Polinomio **pol, struct Monomio *mon){
+	struct Polinomio *it=*pol;
 	struct Polinomio *aux=NULL;
+	struct Monomio *monAux=NULL;
+	if(it==NULL)
+		agregarMonomio(pol,mon);
+	else
+		while(it!=NULL){
+			monAux=it->monomio;
+			if(monAux->grd==mon->grd){
+				monAux->coef+=mon->coef;
+				return;
+			}
+			else if(monAux->grd<mon->grd){
+				aux=(struct Polinomio*) calloc(1,sizeof(struct Polinomio));
+				aux->monomio=monAux;
+				aux->sig=it->sig;
+				it->monomio=mon;
+				it->sig=aux;
+				return;
+			}
+			else if(it->sig==NULL){
+				aux=(struct Polinomio*) calloc(1,sizeof(struct Polinomio));
+				aux->monomio=mon;
+				aux->sig=NULL;
+				it->sig=aux;
+				return;
+			}
+			it=it->sig;
+		}
+	return;
+}
+
+
+
+
+
+
+/**
+ * multiplicarFB:
+ * 
+ * Función que multiplica dos polinomios con el método fuerza bruta. Realiza todas
+ * las multiplicaciones de monomios y las guarda en la variable acum.
+ * 
+ * Cuando finaliza recorre la variable acum y suma todos los monomios dentro
+ * de la variable suma, la que luego es retornada.
+ */
+struct Polinomio *multiplicarFB(struct Polinomio *polp,struct Polinomio *polq){
+	struct Polinomio *itp=polp;
+	struct Polinomio *itq=polq;
+	struct Polinomio *acum=NULL;
+	struct Polinomio *suma=NULL;
+	struct Monomio *auxMult=NULL;
+	struct Monomio *monp=NULL;
+	struct Monomio *monq=NULL;
+	if(polp==NULL || polq==NULL){
+		agregarMonomio(&acum,(struct Monomio*) calloc(1,sizeof(struct Monomio)));
+		return acum;
+	}
+	while(itp!=NULL){
+		monp=itp->monomio;
+		while(itq!=NULL){
+			monq=itq->monomio;
+			auxMult=(struct Monomio*) calloc(1,sizeof(struct Monomio));
+			auxMult->coef=monp->coef*monq->coef;
+			auxMult->grd=monp->grd+monq->grd;
+			agregarMonomio(&acum,auxMult);
+			itq=itq->sig;
+		}
+		itq=polq;
+		itp=itp->sig;
+	}
+	while(acum!=NULL){
+		sumarMonomioPolinomio(&suma,acum->monomio);
+		acum=acum->sig;
+	}
+	return suma;
+}
+
+
+
+
+
+
+/**
+ * multiplicarRYC:
+ * 
+ * Función que multiplica dos polinomios con el método reducir y conquistar. Se multiplica
+ * el polinomio p por con costante y se acumula en la variable suma.
+ */ 
+struct Polinomio *multiplicarRYC(struct Polinomio *polp, struct Polinomio *polq){
+	struct Polinomio *suma=NULL;
+	struct Polinomio *aux=NULL;
+	struct Polinomio *auxMult=NULL;
 	while(polq!=NULL){
-		acum=suma;
-		aux=multiplicarMonomioPolinimio(polp,polq->monomio);
-		suma=sumarPolinomios(acum,aux);
+		aux=suma;
+		auxMult=multiplicarMonomioPolinimio(polp,polq->monomio);
+		suma=sumarPolinomios(aux,auxMult);
+		liberarMemoria(auxMult);
 		liberarMemoria(aux);
-		liberarMemoria(acum);
 		polq=polq->sig;
 	}
 	return suma;
@@ -373,6 +481,9 @@ struct Polinomio *multiplicarPolinomios(struct Polinomio *polp, struct Polinomio
 
 
 /**
+ * multiplicarMonomioPolinimio:
+ * 
+ * Función que multiplica un polinomio por un monomio mon.
  * 
  */
 struct Polinomio *multiplicarMonomioPolinimio(struct Polinomio *pol,struct Monomio *mon){
