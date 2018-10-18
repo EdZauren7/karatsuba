@@ -5,17 +5,15 @@ Semana 2:
 Semana 3:
 
 Semana 4:
-– Multiplicar por una potencia de x
-– Multiplicar polinomios con 1 paso de inducción (dividir-y-conquistar clásico)
-– Multiplicar polinomios con 1 paso de Karatsuba (dividir-y-conquistar)
+â€“ Multiplicar polinomios con 1 paso de Karatsuba (dividir-y-conquistar)
 
 Semana 5:
-– [identificar el grado minimo donde Karatsuba es más eficiente]
-– implementar para la multiplicación de cualquier grados
+â€“ [identificar el grado minimo donde Karatsuba es mÃ¡s eficiente]
+â€“ implementar para la multiplicaciÃ³n de cualquier grados
 
 
 Observaciones:
 
-– Las funciones deben ser estables (resistentes a errores) y liberar la memoria antes de cerrar.
-– Identificar los grados máximos que se pueden trabajar (si hay).
-– No olvidar de indicar los nombres de los integrantes del equipo de trabajo cuando envían los mini-informes semanales.
+â€“ Las funciones deben ser estables (resistentes a errores) y liberar la memoria antes de cerrar.
+â€“ Identificar los grados mÃ¡ximos que se pueden trabajar (si hay).
+â€“ No olvidar de indicar los nombres de los integrantes del equipo de trabajo cuando envÃ­an los mini-informes semanales.
