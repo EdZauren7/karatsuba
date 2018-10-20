@@ -75,7 +75,7 @@ int main(int argc, char **argv){
 	struct Polinomio *polMult=NULL;
 	struct Polinomio *copia=NULL;
 	clock_t begin;
-	double tfb,tryc,tdyc;
+	double tsp=-1,trp=-1,tfb=-1,tryc=-1,tdyc=-1;
 	long gradop=0;
 	long gradoq=0;
 	srand(time(0));
@@ -91,40 +91,49 @@ int main(int argc, char **argv){
 	printf("Polinomio 1 (copia, ver código): \n");
 	copia=copiarPolinomio(polp);
 	imprimirPolinomio(copia);
+	liberarMemoria(copia);
 	printf("\nSuma de los polinomios: \n");
+	begin=clock();
 	polSuma=sumarPolinomios(polp,polq);
+	tsp=(double) (clock()-begin)/CLOCKS_PER_SEC;
 	imprimirPolinomio(polSuma);
+	liberarMemoria(polSuma);
 	printf("Resta de los polinomios (p1-p2): \n");
+	begin=clock();
 	polResta=restarPolinomios(polp,polq);
+	trp=(double) (clock()-begin)/CLOCKS_PER_SEC;
 	imprimirPolinomio(polResta);
-	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Fuerza bruta): \n");
-	begin=clock();
-	polMult=multiplicarFB(polp,polq);
-	tfb=(double) (clock()-begin)/CLOCKS_PER_SEC;
-	imprimirPolinomio(polMult);
-	liberarMemoria(polMult);
-	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Red. y colquistar): \n");
-	begin=clock();
-	polMult=multiplicarRYC(polp,polq);
-	tryc=(double) (clock()-begin)/CLOCKS_PER_SEC;
-	imprimirPolinomio(polMult);
-	liberarMemoria(polMult);
-	polMult=NULL;
-	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Div. y colquistar): \n");
-	begin=clock();
-	if(gradop==gradoq)
-		multiplicarDYC(polp,polq,&polMult);
-	else
-		printf("Los grados deben ser iguales! \n");
-	tdyc=(double) (clock()-begin)/CLOCKS_PER_SEC;
-	imprimirPolinomio(polMult);
-	printf("\nTiempos: |FuBr %lf |ReYCo: %lf |DiYCo: %lf",tfb,tryc,tdyc);
+	liberarMemoria(polResta);
+	if(gradop<=1000 && gradoq<=1000){
+		printf("\nMultiplicacion polinomio 1 por polinomio 2 (Fuerza bruta): \n");
+		begin=clock();
+		polMult=multiplicarFB(polp,polq);
+		tfb=(double) (clock()-begin)/CLOCKS_PER_SEC;
+		imprimirPolinomio(polMult);
+		liberarMemoria(polMult);
+		printf("\nMultiplicacion polinomio 1 por polinomio 2 (Red. y colquistar): \n");
+		begin=clock();
+		polMult=multiplicarRYC(polp,polq);
+		tryc=(double) (clock()-begin)/CLOCKS_PER_SEC;
+		imprimirPolinomio(polMult);
+		liberarMemoria(polMult);
+		polMult=NULL;
+		printf("\nMultiplicacion polinomio 1 por polinomio 2 (Div. y colquistar): \n");
+		begin=clock();
+		if(gradop==gradoq){
+			multiplicarDYC(polp,polq,&polMult);
+			imprimirPolinomio(polMult);
+			tdyc=(double) (clock()-begin)/CLOCKS_PER_SEC;
+			liberarMemoria(polMult);
+		}
+		else
+			printf("Para Div y conq. los grados deben ser iguales! \n");
+	}
 	liberarMemoria(polp);
 	liberarMemoria(polq);
-	liberarMemoria(polSuma);
-	liberarMemoria(polResta);
-	liberarMemoria(polMult);
-	liberarMemoria(copia);
+	printf("\nTiempos: |SumPo %lf |ResPo: %lf\n",tsp,trp);
+	printf("Tiempos: |FuBr %lf |ReYCo: %lf |DiYCo: %lf\n",tfb,tryc,tdyc);
+	printf("Si tiempo = -1 signica que no se ejecutó el algoritmo.\n");
 	return 0;
 }
 
