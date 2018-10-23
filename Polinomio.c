@@ -105,35 +105,31 @@ int main(int argc, char **argv){
 	trp=(double) (clock()-begin)/CLOCKS_PER_SEC;
 	imprimirPolinomio(polResta);
 	liberarMemoria(polResta);
-	if(gradop<=1000 && gradoq<=1000){
+	/*if(gradop<=1000 && gradoq<=1000){
 		printf("\nMultiplicacion polinomio 1 por polinomio 2 (Fuerza bruta): \n");
 		begin=clock();
 		polMult=multiplicarFB(polp,polq);
 		tfb=(double) (clock()-begin)/CLOCKS_PER_SEC;
 		imprimirPolinomio(polMult);
 		liberarMemoria(polMult);
-		printf("\nMultiplicacion polinomio 1 por polinomio 2 (Red. y colquistar): \n");
-		begin=clock();
-		polMult=multiplicarRYC(polp,polq);
-		tryc=(double) (clock()-begin)/CLOCKS_PER_SEC;
-		imprimirPolinomio(polMult);
-		liberarMemoria(polMult);
-		polMult=NULL;
-		printf("\nMultiplicacion polinomio 1 por polinomio 2 (Div. y colquistar): \n");
-		begin=clock();
-		if(gradop==gradoq){
-			polMult=multiplicarDYC(polp,polq);
-			imprimirPolinomio(polMult);
-			tdyc=(double) (clock()-begin)/CLOCKS_PER_SEC;
-			liberarMemoria(polMult);
-		}
-		else
-			printf("Para Div y conq. los grados deben ser iguales! \n");
-	}
+	}*/
+	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Red. y colquistar): \n");
+	begin=clock();
+	polMult=multiplicarRYC(polp,polq);
+	tryc=(double) (clock()-begin)/CLOCKS_PER_SEC;
+	imprimirPolinomio(polMult);
+	liberarMemoria(polMult);
+	polMult=NULL;
+	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Div. y colquistar): \n");
+	begin=clock();
+	polMult=multiplicarDYC(polp,polq);
+	imprimirPolinomio(polMult);
+	tdyc=(double) (clock()-begin)/CLOCKS_PER_SEC;
+	liberarMemoria(polMult);
 	liberarMemoria(polp);
 	liberarMemoria(polq);
-	printf("\nTiempos: |SumPo %lf |ResPo: %lf\n",tsp,trp);
-	printf("Tiempos: |FuBr %lf |ReYCo: %lf |DiYCo: %lf\n",tfb,tryc,tdyc);
+	printf("\nTiempos: |Suma Polinomios %lf |Resta Polinomios: %lf\n",tsp,trp);
+	printf("Tiempos multiplicacion: |Fue.Bruta %lf |RedYConq: %lf |DivYConq: %lf\n",tfb,tryc,tdyc);
 	printf("Si tiempo = -1 signica que no se ejecutó el algoritmo.\n");
 	return 0;
 }
@@ -590,78 +586,6 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq)
 		return suma;
 	}
 }
-
-
-/*
-void multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,struct Polinomio **res){
-	struct Monomio *m1,*m2;
-	struct Polinomio *a1,*b1,*a0,*b0,*resAux;
-	long lp=largoPolinomio(polp),lq=largoPolinomio(polq);
-	if(lp==1 && lq==1){
-		sumarMonomioPolinomio(res,multiplicarMonomios(polp->monomio,polq->monomio));
-		return;
-	}
-	else{
-		a1=copiarPartePolinomio(polp,(lp+1)/2,polp->monomio->grd);
-		a0=copiarPartePolinomio(polp,(lp)/2,polp->monomio->grd-(lp+1)/2);
-		b1=copiarPartePolinomio(polq,(lq+1)/2,polq->monomio->grd);
-		b0=copiarPartePolinomio(polq,(lq)/2,polq->monomio->grd-(lp+1)/2);
-		if((lp)%2==0 && (lq)%2==0){
-			multiplicarDYC(a1,b1,res);
-			multiplicarDYC(a1,b0,res);
-			multiplicarDYC(a0,b1,res);
-			multiplicarDYC(a0,b0,res);
-		}
-		else if((lp)%2==0){
-			m1=a1->monomio;
-			m2=a0->monomio;
-			multiplicarDYC(a1,b1,res);
-			resAux=*(res);
-			*(res)=sumarPolinomios(*res,multiplicarMonomioPolinimio(b0,m1));
-			liberarMemoria(resAux);
-			multiplicarDYC(a1->sig,b0,res);
-			multiplicarDYC(a0,b1,res);
-			resAux=*(res);
-			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(b0,m2)));
-			liberarMemoria(resAux);
-			multiplicarDYC(a0->sig,b0,res);
-		}
-		else if((lq)%2==0){
-			m1=b1->monomio;
-			m2=b0->monomio;
-			multiplicarDYC(a1,b1,res);
-			multiplicarDYC(a1,b0,res);
-			resAux=*(res);
-			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(a0,m1)));
-			liberarMemoria(resAux);
-			multiplicarDYC(a0,b1->sig,res);
-			resAux=*(res);
-			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(a0,m2)));
-			liberarMemoria(resAux);
-			multiplicarDYC(a0,b0->sig,res);
-		}
-		else{
-			m1=a1->monomio;
-			m2=b1->monomio;
-			multiplicarDYC(a1,b1,res);
-			multiplicarDYC(a0,b0,res);
-			resAux=*(res);
-			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(b0,m1)));
-			liberarMemoria(resAux);
-			multiplicarDYC(a1->sig,b0,res);
-			resAux=*(res);
-			*res=(sumarPolinomios(*res,multiplicarMonomioPolinimio(a0,m2)));
-			liberarMemoria(resAux);
-			multiplicarDYC(a0,b1->sig,res);
-		}
-	}
-	liberarMemoria(a1);
-	liberarMemoria(a0);
-	liberarMemoria(b1);
-	liberarMemoria(b0);
-	return;
-}
-*/
 
 
 
