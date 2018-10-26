@@ -3,7 +3,7 @@
     Autores   : NICOLAS IGNACIO HONORATO DROGUETT; EDUARDO BALTRA ROJAS.
     Programa  : Operacion de polinomios.
 	Proposito : Generar polinomios y realizar las operaciones básicas que se puede hacer con ellos.
-    Fecha     : Santiago de Chile, 12 de Octubre de 2018.
+    Fecha     : Santiago de Chile, 26 de Octubre de 2018.
 	Compilador: gcc (Ubuntu 5.4.0-6ubuntu1~16.04.9) 5.4.0
 	Standard  : C99
 
@@ -15,7 +15,6 @@
 #include <time.h>
 /**--------------------------------------------CONSTANTES GLOBALES----------------------------------------------------**/
 #define maxCoef 1048576  //+-1048576 //Es el valor máximo absoluto que puede tomar un coeficiente.
-#define maxGrd 4194304   //4194304  //Es el valor máximo que puede tomar un grado.
 
 
 /**------------------------------------------------ESTRUCTURAS--------------------------------------------------------**/
@@ -444,6 +443,7 @@ struct Monomio *multiplicarMonomios(struct Monomio *mp,struct Monomio *mq){
 
 
 
+
 /**
  * multiplicarFB:
  * 
@@ -641,7 +641,7 @@ struct Polinomio *metodoRYC(struct Polinomio *a0,struct Polinomio *a1,struct Pol
 
 
 /**
- * metodoRYC:
+ * metodoKaratsuba:
  * 
  * Función que recibe un polinomio a y un polinomio b, divididos en a0, a1 y b0, b1, respectivamente.
  * Retorna la multiplicación entre todos ellos con el método de karatsuba utilizando la función red. y conquistar.
@@ -710,6 +710,7 @@ struct Polinomio *sumarPolinomios(struct Polinomio *polp, struct Polinomio *polq
 
 
 
+
 /**
  * restarPolinomios:
  * 
@@ -752,7 +753,5 @@ long stringToLong(char *s){
         suma=(suma*10)+(s[i]-'0');
     return suma;
 }
-
-
 
 /**-----------------------------------------------FIN FUNCIONES-------------------------------------------------------**/

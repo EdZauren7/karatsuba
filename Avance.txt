@@ -1,11 +1,10 @@
-Semana 1:
+﻿Semana 1:
 
 Semana 2:
 
 Semana 3:
 
 Semana 4:
-– Multiplicar polinomios con 1 paso de Karatsuba (dividir-y-conquistar)
 
 Semana 5:
 – [identificar el grado minimo donde Karatsuba es más eficiente]
