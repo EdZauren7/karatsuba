@@ -14,7 +14,7 @@
 #include <math.h>
 #include <time.h>
 /**--------------------------------------------CONSTANTES GLOBALES----------------------------------------------------**/
-#define maxCoef 1048576  //+-1048576 //Es el valor máximo absoluto que puede tomar un coeficiente.
+#define maxCoef 5  //+-1048576 //Es el valor máximo absoluto que puede tomar un coeficiente.
 
 
 /**------------------------------------------------ESTRUCTURAS--------------------------------------------------------**/
@@ -68,11 +68,10 @@ double menuResta(struct Polinomio *p,struct Polinomio *q);
 double menuFuerzaBruta(struct Polinomio *p,struct Polinomio *q);
 double menuRYC(struct Polinomio *p,struct Polinomio *q);
 double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *(*metodoMult)(struct Polinomio*,struct Polinomio*,struct Polinomio*,struct Polinomio*));
-
+void menuComparacion(long n, long grd);
 void liberarMemoria(struct Polinomio *pol);
 long stringToLong(char *s);
 /**-----------------------------------------------FIN PROTOTIPOS------------------------------------------------------**/
-	
 int main(int argc, char **argv){
 	struct Polinomio *polp=NULL,*polq=NULL;
 	clock_t begin;
@@ -89,24 +88,24 @@ int main(int argc, char **argv){
 	polq=generarPolinomio(gradoq);
 	printf("Polinomio 2: \n");
 	imprimirPolinomio(polq);
-
-	/*tsp=menuSuma(polp,polq);
+	tsp=menuSuma(polp,polq);
 	trp=menuResta(polp,polq);
-	tfb=menuFuerzaBruta(polp,polq);*/
-	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Div. y colquistar): \n");
+	tfb=menuFuerzaBruta(polp,polq);
+	tryc=menuRYC(polp,polq);
+	printf("\nMultiplicacion polinomio 1 por polinomio 2 (Div. y conquistar): \n");
 	tdyc=menuMetodosDYC(polp,polq,&metodoClasico);
 	printf("\nMultiplicacion polinomio 1 por polinomio 2 (karatsuba): \n");
 	tkt=menuMetodosDYC(polp,polq,&metodoKaratsuba);
 	liberarMemoria(polp);
 	liberarMemoria(polq);
-
 	printf("\nTiempos: |Suma Polinomios %.3lfs |Resta Polinomios: %.3lfs\n",tsp,trp);
 	printf("Ti. multiplicacion: |Fue.Bruta %.3lfs |RedYConq: %.3lfs |DivYConq: %.3lfs |Karatsuba: %.3lfs\n",tfb,tryc,tdyc,tkt);
 	printf("Si tiempo = -1 signica que no se ejecutó el algoritmo.\n");
 	printf("Para las multiplicaciones de DYC los grados deben ser iguales.\n");
+	//menuComparacion(1000,5);
 	return 0;
 }
-
+/**-----------------------------------------------FUNCIONES MENU-------------------------------------------------------**/
 
 double menuSuma(struct Polinomio *p,struct Polinomio *q){
 	struct Polinomio *polSuma=NULL;
@@ -163,6 +162,7 @@ double menuRYC(struct Polinomio *p,struct Polinomio *q){
 	}
 	return tryc;
 }
+
 double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *(*metodoMult)(struct Polinomio*,struct Polinomio*,struct Polinomio*,struct Polinomio*)){
 	struct Polinomio *polMult=NULL;
 	clock_t begin;
@@ -176,7 +176,41 @@ double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *
 	}
 	return tdyc;
 }
+
+void menuComparacion(long n, long grd){
+	struct Polinomio **lista1=(struct Polinomio**) calloc(n,sizeof(struct Polinomio*));
+	struct Polinomio **lista2=(struct Polinomio**) calloc(n,sizeof(struct Polinomio*));
+	struct Polinomio *aux1,*aux2;
+	long i=0,j=0;
+	double tdyc=0,tkt=0;
+	clock_t begin;
+	for(;i<n;i++){
+		lista1[i]=generarPolinomio(rand()%grd);
+		lista2[i]=generarPolinomio(rand()%grd);
+	}
+	for(i=0;i<n;i++){
+		for(j=0;j<n;j++){
+			begin=clock();
+			aux1=multiplicarDYC(lista1[i],lista2[j],&metodoClasico);
+			tdyc+=((clock()-begin)/(CLOCKS_PER_SEC/1000));
+			liberarMemoria(aux1);
+			begin=clock();
+			aux2=multiplicarDYC(lista1[i],lista2[j],&metodoKaratsuba);
+			tkt+=((clock()-begin)/(CLOCKS_PER_SEC/1000));
+			liberarMemoria(aux2);
+		}
+		printf("\rComparaciones: %.5lf %%",(double) (((i+1)*100)/n));
+		fflush(stdout);
+		liberarMemoria(lista1[i]);
+	}
+	for(i=0;i<n;i++)
+		liberarMemoria(lista2[i]);
+	printf("\nPromedios:  |Metodo clasico: %.5lfms  |Metodo Karatsuba: %.3lfms\n",tdyc/(n*n),tkt/(n*n));
+	return;
+}
 /**-------------------------------------------------FUNCIONES---------------------------------------------------------**/
+
+
 /**
  * generarPolinomio:
  * 
@@ -264,6 +298,8 @@ void agregarMonomio(struct Polinomio **pol,struct Monomio *mon){
 void imprimirPolinomio(struct Polinomio *pol){
 	struct Polinomio *it=pol;
 	struct Monomio *mon;
+	while(it!=NULL && it->monomio->coef==0)
+		it=it->sig;
 	if(it!=NULL){
 		mon=it->monomio;
 		if(mon->coef!=0)
@@ -362,48 +398,16 @@ struct Monomio *sumaMons(struct Monomio *molp, struct Monomio *molq,int signo){
  * Se asume que polp y polq no reciben valores NULL al llamar a la función.
  */
 struct Polinomio *sumaPol(struct Polinomio *polp, struct Polinomio *polq,int signo){
-	struct Polinomio *acum=NULL;
-	long gradoMayor=0;
-	struct Monomio *molp,*molq,*aux;
-	if(polp!=NULL && polq!=NULL){
-		if(polp!=NULL)
-			gradoMayor=polp->monomio->grd;
-		if(polq!=NULL && polp->monomio->grd<polq->monomio->grd)
-			gradoMayor=polq->monomio->grd;
-	}
-	while(polp!=NULL && polq!=NULL){
-		molp=polp->monomio;
-		molq=polq->monomio;
-		if(molp->grd==gradoMayor && molq->grd==gradoMayor){
-			agregarMonomio(&(acum),sumaMons(molp,molq,signo));
-			polp=polp->sig;
-			polq=polq->sig;
-		}
-		else if(molp->grd==gradoMayor){
-			agregarMonomio(&(acum),copiarMonomio(molp));
-			polp=polp->sig;
-		}
-		else if(molq->grd==gradoMayor){
-				aux=copiarMonomio(molq);
-				aux->coef*=signo;
-				agregarMonomio(&(acum),aux);
-				polq=polq->sig;
-		}
-		gradoMayor--;
-	}
-	while(polp!=NULL){
-		agregarMonomio(&(acum),copiarMonomio(polp->monomio));
-		polp=polp->sig;
-	}
+	struct Polinomio *acum=copiarPolinomio(polp);
+	struct Monomio *aux=NULL;
 	while(polq!=NULL){
 		aux=copiarMonomio(polq->monomio);
-		aux->coef*=signo;
-		agregarMonomio(&(acum),aux);
+		(aux->coef)*=signo;
+		sumarMonomioPolinomio(&acum,aux);
 		polq=polq->sig;
 	}
 	return acum;
 }
-
 
 
 
@@ -610,9 +614,9 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,
 	struct Polinomio *multiplicacion=NULL;
 	struct Monomio *aux1;
 	if(polp==NULL || polq==NULL)
-		return (struct Polinomio*) calloc(1,sizeof(struct Polinomio));
+		sumarMonomioPolinomio(&multiplicacion,(struct Monomio *) calloc(1,sizeof(struct Monomio)));
 	else if(polp->monomio->grd==0 && polq->monomio->grd==0)
-		agregarMonomio(&multiplicacion,multiplicarMonomios(polp->monomio,polq->monomio));
+		sumarMonomioPolinomio(&multiplicacion,multiplicarMonomios(polp->monomio,polq->monomio));
 	else{
 		if(polp->monomio->grd%2==0){
 			aux1=(struct Monomio *) calloc(1,sizeof(struct Monomio));
@@ -624,7 +628,7 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,
 			aux1=(struct Monomio *) calloc(1,sizeof(struct Monomio));
 			aux1->coef=0;
 			aux1->grd=polq->monomio->grd+1;
-			sumarMonomioPolinomio(&polq,aux1);	
+			sumarMonomioPolinomio(&polq,aux1);
 		}
 		a0=copiarPartePolinomio(polp,(polp->monomio->grd-1)/2,0);
 		a1=copiarPartePolinomio(polp,polp->monomio->grd,(polp->monomio->grd+1)/2);
@@ -637,7 +641,6 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,
 		liberarMemoria(a0);
 		liberarMemoria(b1);
 		liberarMemoria(b0);
-		
 	}
 	return multiplicacion;
 }
@@ -646,8 +649,7 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,
 
 
 /**
- * metodoClasico
- *:
+ * metodoClasico:
  * 
  * Función que recibe un polinomio a y un polinomio b, divididos en a0, a1 y b0, b1, respectivamente.
  * Retorna la multiplicación entre todos ellos con el método de dividir y conquistar clásica utilizando
@@ -657,19 +659,15 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,
 struct Polinomio *metodoClasico(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1){
 	struct Polinomio *suma;
 	struct Polinomio *auxMult1,*auxMult2,*auxMult3,*auxMult4,*auxSuma;
-	//auxMult1=multiplicarRYC(a1,b1);
-	auxMult1=multiplicarDYC(a1,b1,&metodoClasico);
+	auxMult1=multiplicarRYC(a1,b1);
 	multiplicarPorPotencia(&auxMult1,(a0->monomio->grd+1)*2);
-	//auxMult2=multiplicarRYC(a0,b1);
-	auxMult2=multiplicarDYC(a0,b1,&metodoClasico);
-	//auxMult3=multiplicarRYC(a1,b0);
-	auxMult3=multiplicarDYC(a1,b0,&metodoClasico);
-	//auxMult4=multiplicarRYC(a0,b0);
-	auxMult4=multiplicarDYC(a0,b0,&metodoClasico);
+	auxMult2=multiplicarRYC(a0,b1);
+	auxMult3=multiplicarRYC(a1,b0);
+	auxMult4=multiplicarRYC(a0,b0);
 	suma=sumarPolinomios(auxMult2,auxMult3);
+	multiplicarPorPotencia(&suma,(a0->monomio->grd+1));
 	liberarMemoria(auxMult2);
 	liberarMemoria(auxMult3);
-	multiplicarPorPotencia(&suma,(a0->monomio->grd+1));
 	auxSuma=sumarPolinomios(suma,auxMult1);
 	liberarMemoria(suma);
 	liberarMemoria(auxMult1);
@@ -678,7 +676,6 @@ struct Polinomio *metodoClasico(struct Polinomio *a0,struct Polinomio *a1,struct
 	liberarMemoria(auxSuma);
 	return suma;
 }
-
 
 
 
@@ -693,15 +690,12 @@ struct Polinomio *metodoClasico(struct Polinomio *a0,struct Polinomio *a1,struct
 struct Polinomio *metodoKaratsuba(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1){
 	struct Polinomio *auxMult1,*auxMult2,*auxMult3;
 	struct Polinomio *auxSuma1,*auxSuma2,*auxSuma3,*auxSuma4;
-	//auxMult1=multiplicarRYC(a1,b1);
-	auxMult1=multiplicarDYC(a1,b1,&metodoKaratsuba);
-	//auxMult2=multiplicarRYC(a0,b0);
-	auxMult2=multiplicarDYC(a0,b0,&metodoKaratsuba);
+	auxMult1=multiplicarRYC(a1,b1);
+	auxMult2=multiplicarRYC(a0,b0);
 	auxSuma1=sumarPolinomios(auxMult1,auxMult2);
 	auxSuma2=sumarPolinomios(a0,a1);
 	auxSuma3=sumarPolinomios(b0,b1);
-	//auxMult3=multiplicarRYC(auxSuma2,auxSuma3);
-	auxMult3=multiplicarDYC(auxSuma2,auxSuma3,&metodoKaratsuba);
+	auxMult3=multiplicarRYC(auxSuma2,auxSuma3);
 	liberarMemoria(auxSuma3);
 	auxSuma4=restarPolinomios(auxMult3,auxSuma1);
 	liberarMemoria(auxMult3);
@@ -732,7 +726,7 @@ struct Polinomio *metodoKaratsuba(struct Polinomio *a0,struct Polinomio *a1,stru
 void multiplicarPorPotencia(struct Polinomio **pol, long grd){
 	struct Polinomio *it=*pol;
 	while(it!=NULL){
-		it->monomio->grd+=grd;
+		(it->monomio->grd)+=grd;
 		it=it->sig;
 	}
 	return;
