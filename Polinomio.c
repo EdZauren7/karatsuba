@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <unistd.h>
 /**--------------------------------------------CONSTANTES GLOBALES----------------------------------------------------**/
 #define maxCoef 5  //+-1048576 //Es el valor máximo absoluto que puede tomar un coeficiente.
 
@@ -68,7 +69,8 @@ double menuResta(struct Polinomio *p,struct Polinomio *q);
 double menuFuerzaBruta(struct Polinomio *p,struct Polinomio *q);
 double menuRYC(struct Polinomio *p,struct Polinomio *q);
 double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *(*metodoMult)(struct Polinomio*,struct Polinomio*,struct Polinomio*,struct Polinomio*));
-void menuComparacion(long n, long grd);
+void comparacionMetodos(long n, long grd);
+void comparacionesMetodos(long n,long grdMax);
 void liberarMemoria(struct Polinomio *pol);
 long stringToLong(char *s);
 /**-----------------------------------------------FIN PROTOTIPOS------------------------------------------------------**/
@@ -102,7 +104,7 @@ int main(int argc, char **argv){
 	printf("Ti. multiplicacion: |Fue.Bruta %.3lfs |RedYConq: %.3lfs |DivYConq: %.3lfs |Karatsuba: %.3lfs\n",tfb,tryc,tdyc,tkt);
 	printf("Si tiempo = -1 signica que no se ejecutó el algoritmo.\n");
 	printf("Para las multiplicaciones de DYC los grados deben ser iguales.\n");
-	//menuComparacion(1000,5);
+	comparacionesMetodos(500,50);
 	return 0;
 }
 /**-----------------------------------------------FUNCIONES MENU-------------------------------------------------------**/
@@ -177,13 +179,23 @@ double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *
 	return tdyc;
 }
 
-void menuComparacion(long n, long grd){
+void comparacionesMetodos(long n,long grdMax){
+	long i=1;
+	printf("\n\n|------------------------------------------------------------------------------------------------------|\n");
+	for(;i<grdMax;i++){
+		comparacionMetodos(n,i);
+		sleep(3);
+	}
+	printf("|------------------------------------------------------------------------------------------------------|");
+}
+void comparacionMetodos(long n, long grd){
 	struct Polinomio **lista1=(struct Polinomio**) calloc(n,sizeof(struct Polinomio*));
 	struct Polinomio **lista2=(struct Polinomio**) calloc(n,sizeof(struct Polinomio*));
 	struct Polinomio *aux1,*aux2;
 	long i=0,j=0;
-	double tdyc=0,tkt=0;
+	double tdyc=0,tkt=0,ttdyc,ttkt;
 	clock_t begin;
+	char *metodo="Ambos";
 	for(;i<n;i++){
 		lista1[i]=generarPolinomio(rand()%grd);
 		lista2[i]=generarPolinomio(rand()%grd);
@@ -199,13 +211,21 @@ void menuComparacion(long n, long grd){
 			tkt+=((clock()-begin)/(CLOCKS_PER_SEC/1000));
 			liberarMemoria(aux2);
 		}
-		printf("\rComparaciones: %.5lf %%",(double) (((i+1)*100)/n));
+		printf("\r| Comparaciones: %.2lf %%",(double) (((i+1)*100)/n));
 		fflush(stdout);
 		liberarMemoria(lista1[i]);
 	}
+	free(lista1);
 	for(i=0;i<n;i++)
 		liberarMemoria(lista2[i]);
-	printf("\nPromedios:  |Metodo clasico: %.5lfms  |Metodo Karatsuba: %.3lfms\n",tdyc/(n*n),tkt/(n*n));
+	free(lista2);
+	ttdyc=tdyc/(n*n);
+	ttkt=tkt/(n*n);
+	if((ttdyc-ttkt)<0)
+		metodo="Clasico";
+	else if((ttdyc-ttkt)>0)
+		metodo="Karatsuba";
+	printf("\r|Grado maximo: %04ld ||AVG:  |M. clasico: %.5lfms  |M. Karatsuba: %.5lfms | |Menor tiempo: %s\n",grd,ttdyc,ttkt,metodo);
 	return;
 }
 /**-------------------------------------------------FUNCIONES---------------------------------------------------------**/
