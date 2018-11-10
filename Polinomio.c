@@ -14,7 +14,7 @@
 #include <math.h>
 #include <time.h>
 /**--------------------------------------------CONSTANTES GLOBALES----------------------------------------------------**/
-#define maxCoef 5  //+-1048576 //Es el valor máximo absoluto que puede tomar un coeficiente.
+#define maxCoef 1048576  //+-1048576 //Es el valor máximo absoluto que puede tomar un coeficiente.
 
 
 /**------------------------------------------------ESTRUCTURAS--------------------------------------------------------**/
@@ -36,6 +36,7 @@ struct Polinomio{
 	struct Monomio *monomio;
 	struct Polinomio *sig;
 };
+
 /**-------------------------------------------------PROTOTIPOS--------------------------------------------------------**/
 void crearPolinomio(struct Polinomio **pol);
 void agregarMonomio(struct Polinomio **pol,struct Monomio *mon);
@@ -73,6 +74,7 @@ void comparacionesMetodos(long n,long grdMax);
 void liberarMemoria(struct Polinomio **pol);
 long stringToLong(char *s);
 /**-----------------------------------------------FIN PROTOTIPOS------------------------------------------------------**/
+
 int main(int argc, char **argv){
 	struct Polinomio *polp=NULL,*polq=NULL;
 	clock_t begin;
@@ -103,9 +105,10 @@ int main(int argc, char **argv){
 	printf("Ti. multiplicacion: |Fue.Bruta %.3lfs |RedYConq: %.3lfs |DivYConq: %.3lfs |Karatsuba: %.3lfs\n",tfb,tryc,tdyc,tkt);
 	printf("Si tiempo = -1 signica que no se ejecutó el algoritmo.\n");
 	printf("Para las multiplicaciones de DYC los grados deben ser iguales.\n");
-	comparacionesMetodos(1000,40);
+	//comparacionesMetodos(1000,40);
 	return 0;
 }
+
 /**-----------------------------------------------FUNCIONES MENU-------------------------------------------------------**/
 
 double menuSuma(struct Polinomio *p,struct Polinomio *q){
@@ -146,6 +149,8 @@ double menuFuerzaBruta(struct Polinomio *p,struct Polinomio *q){
 		imprimirPolinomio(polMult);
 		liberarMemoria(&polMult);
 	}
+	else
+		printf("\nLos grados son muy altos para M. fuerza bruta! (Tiempo >~ 1 min) \n");
 	return tfb;
 }
 
@@ -178,6 +183,11 @@ double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *
 	return tdyc;
 }
 
+
+
+
+
+
 void comparacionesMetodos(long n,long grdMax){
 	long i=1;
 	printf("\n\n|------------------------------------------------------------------------------------------------------|\n");
@@ -185,6 +195,11 @@ void comparacionesMetodos(long n,long grdMax){
 		comparacionMetodos(n,i,grdMax);
 	printf("|------------------------------------------------------------------------------------------------------|\n\n");
 }
+
+
+
+
+
 void comparacionMetodos(long n, long grd,long grdMax){
 	struct Polinomio **lista1=(struct Polinomio**) calloc(n,sizeof(struct Polinomio*));
 	struct Polinomio **lista2=(struct Polinomio**) calloc(n,sizeof(struct Polinomio*));
@@ -513,21 +528,13 @@ struct Polinomio *multiplicarFB(struct Polinomio *polp,struct Polinomio *polq){
 	struct Polinomio *acum=NULL;
 	struct Polinomio *suma=NULL;
 	struct Polinomio *acumAux=NULL;
-	struct Monomio *auxMult=NULL;
-	struct Monomio *molp=NULL;
-	struct Monomio *molq=NULL;
 	if(polp==NULL || polq==NULL){
 		agregarMonomio(&acum,(struct Monomio*) calloc(1,sizeof(struct Monomio)));
 		return acum;
 	}
 	while(itp!=NULL){
-		molp=itp->monomio;
 		while(itq!=NULL){
-			molq=itq->monomio;
-			auxMult=(struct Monomio*) calloc(1,sizeof(struct Monomio));
-			auxMult->coef=molp->coef*molq->coef;
-			auxMult->grd=molp->grd+molq->grd;
-			sumarMonomioPolinomio(&acum,auxMult);
+			agregarMonomio(&acum,multiplicarMonomios(itp->monomio,itq->monomio));
 			itq=itq->sig;
 		}
 		itq=polq;
