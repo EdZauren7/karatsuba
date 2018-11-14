@@ -73,6 +73,8 @@ void comparacionMetodos(long n, long grd,long grdMax);
 void comparacionesMetodos(long n,long grdMax);
 void liberarMemoria(struct Polinomio **pol);
 long stringToLong(char *s);
+
+void escribirDatosComparacion(int grd,double clasico,double karatsuba);
 /**-----------------------------------------------FIN PROTOTIPOS------------------------------------------------------**/
 
 int main(int argc, char **argv){
@@ -101,11 +103,11 @@ int main(int argc, char **argv){
 	tkt=menuMetodosDYC(polp,polq,&metodoKaratsuba);
 	liberarMemoria(&polp);
 	liberarMemoria(&polq);
-	printf("\nTiempos: |Suma Polinomios %.3lfs |Resta Polinomios: %.3lfs\n",tsp,trp);
-	printf("Ti. multiplicacion: |Fue.Bruta %.3lfs |RedYConq: %.3lfs |DivYConq: %.3lfs |Karatsuba: %.3lfs\n",tfb,tryc,tdyc,tkt);
+	printf("\nTiempos: |Suma Polinomios %.3lfms |Resta Polinomios: %.3lfms\n",tsp,trp);
+	printf("Ti. multiplicacion: |Fue.Bruta %.3lfms |RedYConq: %.3lfms |DivYConq: %.3lfms |Karatsuba: %.3lfms\n",tfb,tryc,tdyc,tkt);
 	printf("Si tiempo = -1 signica que no se ejecutó el algoritmo.\n");
 	printf("Para las multiplicaciones de DYC los grados deben ser iguales.\n");
-	//comparacionesMetodos(1000,40);
+	//comparacionesMetodos(500,50);
 	return 0;
 }
 
@@ -117,7 +119,7 @@ double menuSuma(struct Polinomio *p,struct Polinomio *q){
 	double tsp=-1;
 	begin=clock();
 	polSuma=sumarPolinomios(p,q);
-	tsp=(double) (clock()-begin)/CLOCKS_PER_SEC;
+	tsp=(double) ((clock()-begin)*1000)/CLOCKS_PER_SEC;
 	printf("\nSuma de los polinomios: \n");
 	imprimirPolinomio(polSuma);
 	liberarMemoria(&polSuma);
@@ -130,7 +132,7 @@ double menuResta(struct Polinomio *p,struct Polinomio *q){
 	double trp=-1;
 	begin=clock();
 	polResta=restarPolinomios(p,q);
-	trp=(double) (clock()-begin)/CLOCKS_PER_SEC;
+	trp=(double) ((clock()-begin)*1000)/CLOCKS_PER_SEC;
 	printf("Resta de los polinomios (p1-p2): \n");
 	imprimirPolinomio(polResta);
 	liberarMemoria(&polResta);
@@ -141,10 +143,10 @@ double menuFuerzaBruta(struct Polinomio *p,struct Polinomio *q){
 	struct Polinomio *polMult=NULL;
 	clock_t begin;
 	double tfb=-1;
-	if(p->monomio->grd<=500 && q->monomio->grd<=500){
+	if(p->monomio->grd<500 && q->monomio->grd<500){
 		begin=clock();
 		polMult=multiplicarFB(p,q);
-		tfb=(double) (clock()-begin)/CLOCKS_PER_SEC;
+		tfb=(double) ((clock()-begin)*1000)/CLOCKS_PER_SEC;
 		printf("\nMultiplicacion polinomio 1 por polinomio 2 (Fuerza bruta): \n");
 		imprimirPolinomio(polMult);
 		liberarMemoria(&polMult);
@@ -162,7 +164,7 @@ double menuRYC(struct Polinomio *p,struct Polinomio *q){
 		printf("\nMultiplicacion polinomio 1 por polinomio 2 (Red. y colquistar): \n");
 		begin=clock();
 		polMult=multiplicarRYC(p,q);
-		tryc=(double) (clock()-begin)/CLOCKS_PER_SEC;
+		tryc=(double) ((clock()-begin)*1000)/CLOCKS_PER_SEC;
 		imprimirPolinomio(polMult);
 		liberarMemoria(&polMult);
 	}
@@ -176,8 +178,8 @@ double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *
 	if(p->monomio->grd==q->monomio->grd){
 		begin=clock();
 		polMult=multiplicarDYC(p,q,metodoMult);
+		tdyc=(double) ((clock()-begin)*1000)/CLOCKS_PER_SEC;
 		imprimirPolinomio(polMult);
-		tdyc=(double) (clock()-begin)/CLOCKS_PER_SEC;
 		liberarMemoria(&polMult);
 	}
 	return tdyc;
@@ -188,8 +190,21 @@ double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *
 
 
 
+/**-------------------------------------------FUNCIONES COMPARACIONES-------------------------------------------------**/
+
+/**
+ * comparacionesMetodos:
+ * 
+ * Función que compara los métodos de DYC clásico y karatsuba, desde el grado 1
+ * hasta el grado grdMax.  
+ */
 void comparacionesMetodos(long n,long grdMax){
 	long i=1;
+	FILE *in;
+	in=fopen("datosComparacion.csv","w");
+	if(in)
+		fprintf(in,"Grado;T.Clasico;T.Karatsuba\n");
+	fclose(in);
 	printf("\n\n|------------------------------------------------------------------------------------------------------|\n");
 	for(;i<=grdMax;i++)
 		comparacionMetodos(n,i,grdMax);
@@ -200,6 +215,16 @@ void comparacionesMetodos(long n,long grdMax){
 
 
 
+/**
+ * comparacionMetodos:
+ * 
+ * Función que genera dos listas de tamaño n, donde se guardan polinomios de grado grd generados aleatoriamente.
+ * 
+ * Se realiza una multiplicación cruzada de ambas listas con los métodos de DYC clásico y karatsuba. Se promedian
+ * los tiempos de ejecución y se comparan.
+ * 
+ * Además, escribe en un archivo los resultados obtenidos.
+ */
 void comparacionMetodos(long n, long grd,long grdMax){
 	struct Polinomio **lista1=(struct Polinomio**) calloc(n,sizeof(struct Polinomio*));
 	struct Polinomio **lista2=(struct Polinomio**) calloc(n,sizeof(struct Polinomio*));
@@ -218,11 +243,11 @@ void comparacionMetodos(long n, long grd,long grdMax){
 		for(j=0;j<n;j++){
 			begin=clock();
 			aux1=multiplicarDYC(lista1[i],lista2[j],&metodoClasico);
-			tdyc+=((clock()-begin)/(CLOCKS_PER_SEC/1000));
+			tdyc+=(((clock()-begin)*1000000)/CLOCKS_PER_SEC);
 			liberarMemoria(&aux1);
 			begin=clock();
 			aux2=multiplicarDYC(lista1[i],lista2[j],&metodoKaratsuba);
-			tkt+=((clock()-begin)/(CLOCKS_PER_SEC/1000));
+			tkt+=(((clock()-begin)*1000000)/CLOCKS_PER_SEC);
 			liberarMemoria(&aux2);
 		}
 		printf("\r| Comparaciones: %.2lf %%",(double) (((i+1)*100)/n));
@@ -239,11 +264,29 @@ void comparacionMetodos(long n, long grd,long grdMax){
 		metodo="Clasico";
 	else if((ttdyc-ttkt)>0)
 		metodo="Karatsuba";
-	printf("\r| Grado maximo: %0*ld ||AVG:  |M. clasico: %.5lfms  |M. Karatsuba: %.5lfms | |Menor tiempo: %s\n",(int)c,grd,ttdyc,ttkt,metodo);
+	printf("\r| Grado maximo: %0*ld ||AVG:  |M. clasico: %.3lfus  |M. Karatsuba: %.3lfus ||Menor tiempo: %s\n",(int)c,grd,ttdyc,ttkt,metodo);
+	escribirDatosComparacion(grd,ttdyc,ttkt);
 	return;
 }
-/**-------------------------------------------------FUNCIONES---------------------------------------------------------**/
 
+
+
+
+
+void escribirDatosComparacion(int grd,double clasico,double karatsuba){
+	FILE *in;
+	in=fopen("datosComparacion.csv","a");
+	if(in)
+		fprintf(in,"%d;%.3lf;%.3lf\n",grd,clasico,karatsuba);
+	fclose(in);
+	return;
+}
+
+
+
+
+
+/**-------------------------------------------------FUNCIONES---------------------------------------------------------**/
 
 /**
  * generarPolinomio:

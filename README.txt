@@ -9,10 +9,11 @@ Modo de ejecutar:
 
 ex:
 
-time ./polinomio.out 10 100
+time ./polinomio.out 150 100
 
-Donde el primer polinomio será grado 10 y el segundo grado 100.
+Donde el primer polinomio será grado 150 y el segundo grado 100.
 
 IMPORTANTE:
 
-Para ver los resultados de la multiplicación DYC (clásico y karatsuba), los grados deben ser iguales.
+- El grado máximo para la multiplicación por fuerza bruta es de 500.
+- Para ver los resultados de la multiplicación DYC (clásico y karatsuba), los grados deben ser iguales.
