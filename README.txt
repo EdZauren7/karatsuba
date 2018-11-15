@@ -4,8 +4,10 @@ gcc polinomio.c -o polinomio.out -lm -std=c99
 
 Modo de ejecutar:
 
-./polinomio.out GradoPolinomio1 GradoPolinomio2
-
+- Modo ejecución Normal (suma,resta y multiplicaciones): 
+	./polinomio.out GradoPolinomio1 GradoPolinomio2
+- Modo comparación de métodos:
+	./polinomio.out
 
 ex:
 
@@ -15,5 +17,6 @@ Donde el primer polinomio será grado 150 y el segundo grado 100.
 
 IMPORTANTE:
 
+- Para cambiar los parámetros de comparación (largo de las listas y grado límite) se deben editar las constantes globales largoListaComparaciones y limiteGrdComparaciones.
+
 - El grado máximo para la multiplicación por fuerza bruta es de 500.
-- Para ver los resultados de la multiplicación DYC (clásico y karatsuba), los grados deben ser iguales.

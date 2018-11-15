@@ -8,7 +8,6 @@ Semana 4:
 
 Semana 5:
 – [identificar el grado minimo donde Karatsuba es más eficiente]
-– implementar para la multiplicación de cualquier grados
 
 
 Observaciones:
