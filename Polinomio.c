@@ -837,7 +837,7 @@ struct Polinomio *metodoKaratsuba(struct Polinomio *a0,struct Polinomio *a1,stru
  */
 struct Polinomio *multiplicacionPolinomios(struct Polinomio *p,struct Polinomio *q){
 	if(p!=NULL && q!=NULL)
-		if(p->monomio->grd>=30 && q->monomio->grd>=30)
+		if(p->monomio->grd>=15 && q->monomio->grd>=15)
 			return multiplicarDYC(p,q,&metodoKaratsuba);
 		else
 			return multiplicarDYC(p,q,&metodoClasico);
