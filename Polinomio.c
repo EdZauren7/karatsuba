@@ -218,14 +218,20 @@ double menuMultiplicacionEfeciente(struct Polinomio *p,struct Polinomio *q){
  */
 void comparacionesMetodos(long n,long grdMax){
 	long i=1;
+	int k;
 	FILE *in;
 	in=fopen("datosComparacion.csv","w");
 	if(in)
 		fprintf(in,"Grado;T.Clasico;T.Karatsuba\n");
 	fclose(in);
 	printf("\n\n|------------------------------------------------------------------------------------------------------|\n");
-	for(;i<=grdMax;i++)
+	for(;i<=grdMax;i++){
 		comparacionMetodos(n,i,grdMax);
+		if(i%15==0)
+			for(k=1;k<=15;k++)
+				printf("\33[2K\033[1A\33[2K");
+	}
+		
 	printf("|------------------------------------------------------------------------------------------------------|\n\n");
 }
 
