@@ -7,9 +7,6 @@ Semana 3:
 Semana 4:
 
 Semana 5:
-– [identificar el grado minimo donde Karatsuba es más eficiente]
-
-
 Observaciones:
 
 – Las funciones deben ser estables (resistentes a errores) y liberar la memoria antes de cerrar.

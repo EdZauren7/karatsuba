@@ -65,23 +65,26 @@ void multiplicarPorPotencia(struct Polinomio **pol, long grd);
 struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,struct Polinomio *(*metodoMult)(struct Polinomio*,struct Polinomio*,struct Polinomio*,struct Polinomio*));
 struct Polinomio *metodoClasico(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1);
 struct Polinomio *metodoKaratsuba(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1);
+struct Polinomio *multiplicacionPolinomios(struct Polinomio *p,struct Polinomio *q);
 
 double menuSuma(struct Polinomio *p,struct Polinomio *q);
 double menuResta(struct Polinomio *p,struct Polinomio *q);
 double menuFuerzaBruta(struct Polinomio *p,struct Polinomio *q);
 double menuRYC(struct Polinomio *p,struct Polinomio *q);
 double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *(*metodoMult)(struct Polinomio*,struct Polinomio*,struct Polinomio*,struct Polinomio*));
+double menuMultiplicacionEfeciente(struct Polinomio *p,struct Polinomio *q);
+
 void comparacionMetodos(long n, long grd,long grdMax);
 void comparacionesMetodos(long n,long grdMax);
+void escribirDatosComparacion(int grd,double clasico,double karatsuba);
+
 void liberarMemoria(struct Polinomio **pol);
 long stringToLong(char *s);
-
-void escribirDatosComparacion(int grd,double clasico,double karatsuba);
 /**-----------------------------------------------FIN PROTOTIPOS------------------------------------------------------**/
 int main(int argc, char **argv){
 	struct Polinomio *polp=NULL,*polq=NULL;
 	clock_t begin;
-	double tsp=-1,trp=-1,tfb=-1,tryc=-1,tdyc=-1,tkt=-1;
+	double tsp=-1,trp=-1,tfb=-1,tryc=-1,tdyc=-1,tkt=-1,tid=-1;
 	long gradop=0;
 	long gradoq=0;
 	srand(time(0));
@@ -103,10 +106,13 @@ int main(int argc, char **argv){
 		tdyc=menuMetodosDYC(polp,polq,&metodoClasico);
 		printf("\nMultiplicacion polinomio 1 por polinomio 2 (karatsuba): \n");
 		tkt=menuMetodosDYC(polp,polq,&metodoKaratsuba);
+		printf("\nMultiplicacion polinomio 1 por polinomio 2 (identificacion): \n");
+		tid=menuMultiplicacionEfeciente(polp,polq);
 		liberarMemoria(&polp);
 		liberarMemoria(&polq);
 		printf("\nTiempos: |Suma Polinomios %.3lfms |Resta Polinomios: %.3lfms\n",tsp,trp);
-		printf("Ti. multiplicacion: |Fue.Bruta %.3lfms |RedYConq: %.3lfms |DivYConq: %.3lfms |Karatsuba: %.3lfms\n",tfb,tryc,tdyc,tkt);
+		printf("Ti. multiplicacion: |Fue.Bruta %.3lfms |RedYConq: %.3lfms\n",tfb,tryc);
+		printf("Ti. multiplicacion: |DivYConq: %.3lfms |Karatsuba: %.3lfms |Identificacion: %.3lfms\n",tdyc,tkt,tid);
 		printf("Si tiempo = -1 signica que no se ejecutó el algoritmo.\n");
 	}
 	else{
@@ -186,6 +192,17 @@ double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *
 	return tdyc;
 }
 
+double menuMultiplicacionEfeciente(struct Polinomio *p,struct Polinomio *q){
+	struct Polinomio *polMult=NULL;
+	double begin;
+	double tid=-1;
+	begin=clock();
+	polMult=multiplicacionPolinomios(p,q);
+	tid=(((clock()-begin)*1000)/CLOCKS_PER_SEC);
+	imprimirPolinomio(polMult);
+	liberarMemoria(&polMult);
+	return tid;
+}
 
 
 
@@ -803,6 +820,23 @@ struct Polinomio *metodoKaratsuba(struct Polinomio *a0,struct Polinomio *a1,stru
 }
 
 
+
+
+
+/**
+ * multiplicacionPolinomios:
+ * 
+ * Función que se encarga de seleccionar el método más rápido para la multiplicación de 
+ * dos polinomios.
+ */
+struct Polinomio *multiplicacionPolinomios(struct Polinomio *p,struct Polinomio *q){
+	if(p!=NULL && q!=NULL)
+		if(p->monomio->grd>=30 && q->monomio->grd>=30)
+			return multiplicarDYC(p,q,&metodoKaratsuba);
+		else
+			return multiplicarDYC(p,q,&metodoClasico);
+	return NULL;
+}
 
 
 
