@@ -3,7 +3,7 @@
     Autores   : NICOLAS IGNACIO HONORATO DROGUETT; EDUARDO BALTRA ROJAS.
     Programa  : Operacion de polinomios.
 	Proposito : Generar polinomios y realizar las operaciones básicas que se puede hacer con ellos.
-    Fecha     : Santiago de Chile, 26 de Octubre de 2018.
+    Fecha     : Santiago de Chile, 16 de noviembre de 2018.
 	Compilador: gcc (Ubuntu 5.4.0-6ubuntu1~16.04.9) 5.4.0
 	Standard  : C99
 
@@ -65,6 +65,8 @@ void multiplicarPorPotencia(struct Polinomio **pol, long grd);
 struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,struct Polinomio *(*metodoMult)(struct Polinomio*,struct Polinomio*,struct Polinomio*,struct Polinomio*));
 struct Polinomio *metodoClasico(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1);
 struct Polinomio *metodoKaratsuba(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1);
+struct Polinomio *metodoClasicoInductivo(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1);
+struct Polinomio *metodoKaratsubaInductivo(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1);
 struct Polinomio *multiplicacionPolinomios(struct Polinomio *p,struct Polinomio *q);
 
 double menuSuma(struct Polinomio *p,struct Polinomio *q);
@@ -72,7 +74,7 @@ double menuResta(struct Polinomio *p,struct Polinomio *q);
 double menuFuerzaBruta(struct Polinomio *p,struct Polinomio *q);
 double menuRYC(struct Polinomio *p,struct Polinomio *q);
 double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *(*metodoMult)(struct Polinomio*,struct Polinomio*,struct Polinomio*,struct Polinomio*));
-double menuMultiplicacionEfeciente(struct Polinomio *p,struct Polinomio *q);
+double menuMultiplicaciones(struct Polinomio *p,struct Polinomio *q);
 
 void comparacionMetodos(long n, long grd,long grdMax);
 void comparacionesMetodos(long n,long grdMax);
@@ -106,13 +108,13 @@ int main(int argc, char **argv){
 		tdyc=menuMetodosDYC(polp,polq,&metodoClasico);
 		printf("\nMultiplicacion polinomio 1 por polinomio 2 (karatsuba): \n");
 		tkt=menuMetodosDYC(polp,polq,&metodoKaratsuba);
-		printf("\nMultiplicacion polinomio 1 por polinomio 2 (identificacion): \n");
-		tid=menuMultiplicacionEfeciente(polp,polq);
+		printf("\nMultiplicacion polinomio 1 por polinomio 2: \n");
+		tid=menuMultiplicaciones(polp,polq);
 		liberarMemoria(&polp);
 		liberarMemoria(&polq);
 		printf("\nTiempos: |Suma Polinomios %.3lfms |Resta Polinomios: %.3lfms\n",tsp,trp);
 		printf("Ti. multiplicacion: |Fue.Bruta %.3lfms |RedYConq: %.3lfms\n",tfb,tryc);
-		printf("Ti. multiplicacion: |DivYConq: %.3lfms |Karatsuba: %.3lfms |Identificacion: %.3lfms\n",tdyc,tkt,tid);
+		printf("Ti. multiplicacion DYC: |Clasico: %.3lfms |Karatsuba: %.3lfms |Ambos: %.3lfms\n",tdyc,tkt,tid);
 		printf("Si tiempo = -1 signica que no se ejecutó el algoritmo.\n");
 	}
 	else{
@@ -192,7 +194,7 @@ double menuMetodosDYC(struct Polinomio *p,struct Polinomio *q,struct Polinomio *
 	return tdyc;
 }
 
-double menuMultiplicacionEfeciente(struct Polinomio *p,struct Polinomio *q){
+double menuMultiplicaciones(struct Polinomio *p,struct Polinomio *q){
 	struct Polinomio *polMult=NULL;
 	double begin;
 	double tid=-1;
@@ -231,7 +233,6 @@ void comparacionesMetodos(long n,long grdMax){
 			for(k=1;k<=15;k++)
 				printf("\33[2K\033[1A\33[2K");
 	}
-		
 	printf("|------------------------------------------------------------------------------------------------------|\n\n");
 }
 
@@ -719,13 +720,23 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,
 	struct Polinomio *aux,*aux2;
 	if(polp==NULL || polq==NULL)
 		sumarMonomioPolinomio(&multiplicacion,crearMonomio(0,0));
-	else if(polp->monomio->grd==0 && polq->monomio->grd==0)
-		sumarMonomioPolinomio(&multiplicacion,multiplicarMonomios(polp->monomio,polq->monomio));
+	else if(polp->monomio->grd==0)
+		return multiplicarMonomioPolinimio(polq,polp->monomio);
+	else if(polq->monomio->grd==0)
+		return multiplicarMonomioPolinimio(polp,polq->monomio);
 	else{
 		if(polp->monomio->grd<polq->monomio->grd){
 			aux=polp;
 			polp=polq;
 			polq=aux;
+		}
+		if(polq->monomio->grd%2==0){
+			aux=multiplicacion;
+			aux2=multiplicarMonomioPolinimio(polp,polq->monomio);
+			multiplicacion=sumarPolinomios(aux,aux2);
+			liberarMemoria(&aux);
+			liberarMemoria(&aux2);
+			polq=polq->sig;
 		}
 		while(polp->monomio->grd>polq->monomio->grd){
 			aux=multiplicacion;
@@ -735,10 +746,6 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,
 			liberarMemoria(&aux2);
 			polp=polp->sig;
 		}
-		if(polp->monomio->grd%2==0)
-			sumarMonomioPolinomio(&polp,crearMonomio(0,polp->monomio->grd+1));
-		if(polq->monomio->grd%2==0)
-			sumarMonomioPolinomio(&polq,crearMonomio(0,polq->monomio->grd+1));
 		a0=copiarPartePolinomio(polp,(polp->monomio->grd-1)/2,0);
 		a1=copiarPartePolinomio(polp,polp->monomio->grd,(polp->monomio->grd+1)/2);
 		b0=copiarPartePolinomio(polq,(polq->monomio->grd-1)/2,0);
@@ -757,6 +764,8 @@ struct Polinomio *multiplicarDYC(struct Polinomio *polp, struct Polinomio *polq,
 	}
 	return multiplicacion;
 }
+
+
 
 
 
@@ -828,21 +837,140 @@ struct Polinomio *metodoKaratsuba(struct Polinomio *a0,struct Polinomio *a1,stru
 
 
 
-
 /**
  * multiplicacionPolinomios:
  * 
- * Función que se encarga de seleccionar el método más rápido para la multiplicación de 
- * dos polinomios.
+ * Función que utiliza los métodos de div. y conquistar clásico y karatsuba. Decide qué método utilizar
+ * en función de los grados de los polinomios enviados por parámetro.
+ * 
+ * Una vez que decide qué método utilizar, las funciones llaman de nuevo a la función para sus respectivas
+ * multiplicaciones.
  */
-struct Polinomio *multiplicacionPolinomios(struct Polinomio *p,struct Polinomio *q){
-	if(p!=NULL && q!=NULL)
-		if(p->monomio->grd>=15 && q->monomio->grd>=15)
-			return multiplicarDYC(p,q,&metodoKaratsuba);
+struct Polinomio *multiplicacionPolinomios(struct Polinomio *polp,struct Polinomio *polq){
+	struct Polinomio *a0,*a1,*b0,*b1;
+	struct Polinomio *multiplicacion=NULL;
+	struct Polinomio *aux,*aux2;
+	if(polp==NULL || polq==NULL)
+		sumarMonomioPolinomio(&multiplicacion,crearMonomio(0,0));	
+	else if(polp->monomio->grd==0)
+		return multiplicarMonomioPolinimio(polq,polp->monomio);
+	else if(polq->monomio->grd==0)
+		return multiplicarMonomioPolinimio(polp,polq->monomio);
+	else{
+		if(polp->monomio->grd<polq->monomio->grd){
+			aux=polp;
+			polp=polq;
+			polq=aux;
+		}
+		if(polq->monomio->grd%2==0){
+			aux=multiplicacion;
+			aux2=multiplicarMonomioPolinimio(polp,polq->monomio);
+			multiplicacion=sumarPolinomios(aux,aux2);
+			liberarMemoria(&aux);
+			liberarMemoria(&aux2);
+			polq=polq->sig;
+		}
+		while(polp->monomio->grd>polq->monomio->grd){
+			aux=multiplicacion;
+			aux2=multiplicarMonomioPolinimio(polq,polp->monomio);
+			multiplicacion=sumarPolinomios(aux,aux2);
+			liberarMemoria(&aux);
+			liberarMemoria(&aux2);
+			polp=polp->sig;
+		}
+		a0=copiarPartePolinomio(polp,(polp->monomio->grd-1)/2,0);
+		a1=copiarPartePolinomio(polp,polp->monomio->grd,(polp->monomio->grd+1)/2);
+		b0=copiarPartePolinomio(polq,(polq->monomio->grd-1)/2,0);
+		b1=copiarPartePolinomio(polq,polq->monomio->grd,(polq->monomio->grd+1)/2);
+		multiplicarPorPotencia(&a1,-(a0->monomio->grd+1));
+		multiplicarPorPotencia(&b1,-(b0->monomio->grd+1));
+		aux=multiplicacion;
+		if(polp->monomio->grd<=15 && polq->monomio->grd<=15)
+			aux2=metodoClasicoInductivo(a0,a1,b0,b1);
 		else
-			return multiplicarDYC(p,q,&metodoClasico);
-	return NULL;
+			aux2=metodoKaratsubaInductivo(a0,a1,b0,b1);	
+		multiplicacion=sumarPolinomios(aux,aux2);
+		liberarMemoria(&aux);
+		liberarMemoria(&aux2);
+		liberarMemoria(&a1);
+		liberarMemoria(&a0);
+		liberarMemoria(&b1);
+		liberarMemoria(&b0);
+	}
+	return multiplicacion;
 }
+
+
+
+
+
+
+/**
+ * metodoClasicoInductivo:
+ * 
+ * Función que recibe un polinomio a y un polinomio b, divididos en a0, a1 y b0, b1, respectivamente.
+ * Retorna la multiplicación entre todos ellos con el método de dividir y conquistar clásica utilizando
+ * recursión, usando la función multiplicacionPolinomios.
+ * 
+ */
+struct Polinomio *metodoClasicoInductivo(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1){
+	struct Polinomio *suma;
+	struct Polinomio *auxMult1,*auxMult2,*auxMult3,*auxMult4,*auxSuma;
+	auxMult1=multiplicacionPolinomios(a1,b1);
+	multiplicarPorPotencia(&auxMult1,(a0->monomio->grd+1)*2);
+	auxMult2=multiplicacionPolinomios(a0,b1);
+	auxMult3=multiplicacionPolinomios(a1,b0);
+	auxMult4=multiplicacionPolinomios(a0,b0);
+	suma=sumarPolinomios(auxMult2,auxMult3);
+	multiplicarPorPotencia(&suma,(a0->monomio->grd+1));
+	liberarMemoria(&auxMult2);
+	liberarMemoria(&auxMult3);
+	auxSuma=sumarPolinomios(suma,auxMult1);
+	liberarMemoria(&suma);
+	liberarMemoria(&auxMult1);
+	suma=sumarPolinomios(auxSuma,auxMult4);
+	liberarMemoria(&auxMult4);
+	liberarMemoria(&auxSuma);
+	return suma;
+}
+
+
+
+
+/**
+ * metodoKaratsuba:
+ * 
+ * Función que recibe un polinomio a y un polinomio b, divididos en a0, a1 y b0, b1, respectivamente.
+ * Retorna la multiplicación entre todos ellos con el método de karatsuba utilizando la función recursvia
+ * multiplicacionPolinomios.
+ * 
+ */
+struct Polinomio *metodoKaratsubaInductivo(struct Polinomio *a0,struct Polinomio *a1,struct Polinomio *b0,struct Polinomio *b1){
+	struct Polinomio *auxMult1,*auxMult2,*auxMult3;
+	struct Polinomio *auxSuma1,*auxSuma2,*auxSuma3,*auxSuma4;
+	auxMult1=multiplicacionPolinomios(a1,b1);
+	auxMult2=multiplicacionPolinomios(a0,b0);
+	auxSuma1=sumarPolinomios(auxMult1,auxMult2);
+	auxSuma2=sumarPolinomios(a0,a1);
+	auxSuma3=sumarPolinomios(b0,b1);
+	auxMult3=multiplicacionPolinomios(auxSuma2,auxSuma3);
+	liberarMemoria(&auxSuma3);
+	auxSuma4=restarPolinomios(auxMult3,auxSuma1);
+	liberarMemoria(&auxMult3);
+	multiplicarPorPotencia(&auxMult1,(a0->monomio->grd+1)*2);
+	multiplicarPorPotencia(&auxSuma4,(a0->monomio->grd+1));
+	liberarMemoria(&auxSuma1);
+	liberarMemoria(&auxSuma2);
+	auxSuma1=sumarPolinomios(auxMult1,auxSuma4);
+	liberarMemoria(&auxMult1);
+	liberarMemoria(&auxSuma4);
+	auxSuma2=sumarPolinomios(auxSuma1,auxMult2);
+	liberarMemoria(&auxSuma1);
+	liberarMemoria(&auxMult2);
+	return auxSuma2;
+}
+
+
 
 
 
