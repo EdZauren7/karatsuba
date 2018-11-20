@@ -15,8 +15,8 @@
 #include <time.h>
 /**--------------------------------------------CONSTANTES GLOBALES----------------------------------------------------**/
 #define maxCoef 1048576 			//Es el valor máximo absoluto que puede tomar un coeficiente.
-#define largoListaComparaciones 200 //Es el largo de las listas en la función para comparar métodos
-#define limiteGrdComparaciones 200	//Es el grado máximo que se comparará en los métodos
+#define largoListaComparaciones 1000 //Es el largo de las listas en la función para comparar métodos
+#define limiteGrdComparaciones 50	//Es el grado máximo que se comparará en los métodos
 
 /**------------------------------------------------ESTRUCTURAS--------------------------------------------------------**/
 /**
@@ -49,7 +49,7 @@ struct Polinomio *copiarPolinomio(struct Polinomio *pol);
 struct Polinomio *copiarPartePolinomio(struct Polinomio *pol, long grdIn,long grdFin);
 struct Monomio *copiarMonomio(struct Monomio *mon);
 
-struct Monomio *sumaMons(struct Monomio *molp, struct Monomio *molq,int signo);
+struct Monomio *sumarMonomios(struct Monomio *molp, struct Monomio *molq,int signo);
 struct Polinomio *sumaPol(struct Polinomio *polp, struct Polinomio *polq,int signo);
 struct Polinomio *sumarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
 struct Polinomio *restarPolinomios(struct Polinomio *polp, struct Polinomio *polq);
@@ -87,17 +87,13 @@ int main(int argc, char **argv){
 	struct Polinomio *polp=NULL,*polq=NULL;
 	clock_t begin;
 	double tsp=-1,trp=-1,tfb=-1,tryc=-1,tdyc=-1,tkt=-1,tid=-1;
-	long gradop=0;
-	long gradoq=0;
 	srand(time(0));
 	system("clear");
 	if(argc==3){
-		gradop=stringToLong(argv[1]);
-		gradoq=stringToLong(argv[2]);
-		polp=generarPolinomio(gradop);
+		polp=generarPolinomio(stringToLong(argv[1]));
 		printf("Polinomio 1: \n");
 		imprimirPolinomio(polp);
-		polq=generarPolinomio(gradoq);
+		polq=generarPolinomio(stringToLong(argv[2]));
 		printf("Polinomio 2: \n");
 		imprimirPolinomio(polq);
 		tsp=menuSuma(polp,polq);
@@ -289,7 +285,7 @@ void comparacionMetodos(long n, long grd,long grdMax){
 		metodo="Clasico";
 	else if((ttdyc-ttkt)>0)
 		metodo="Karatsuba";
-	printf("\r| Grado maximo: %0*ld ||AVG:  |M. clasico: %.3lfms  |M. Karatsuba: %.3lfms ||Menor tiempo: %s\n",(int)c,grd,ttdyc,ttkt,metodo);
+	printf("\r| Grado maximo: %0*ld ||AVG:  |M. clasico: %.5lfms  |M. Karatsuba: %.5lfms ||Menor tiempo: %s\n",(int)c,grd,ttdyc,ttkt,metodo);
 	escribirDatosComparacion(grd,ttdyc,ttkt);
 	return;
 }
@@ -302,7 +298,7 @@ void escribirDatosComparacion(int grd,double clasico,double karatsuba){
 	FILE *in;
 	in=fopen("datosComparacion.csv","a");
 	if(in)
-		fprintf(in,"%d;%.3lf;%.3lf\n",grd,clasico,karatsuba);
+		fprintf(in,"%d;%.6lf;%.6lf\n",grd,clasico,karatsuba);
 	fclose(in);
 	return;
 }
@@ -316,20 +312,14 @@ void escribirDatosComparacion(int grd,double clasico,double karatsuba){
 /**
  * generarPolinomio:
  * 
- * Función que genera un polinomio aleatorio de un grado dado. 
+ * Función que genera un polinomio aleatorio a partir de un grado dado. 
  * 
  * El polinomio generado está ordenado por grado, de mayor a menor.
  */
 struct Polinomio *generarPolinomio(long grdIt){
 	struct Polinomio *pol=NULL;
-	struct Monomio *mon=NULL;
-	while(grdIt>=0){
-		mon=crearMonomio(rand()%maxCoef,grdIt);
-		if(rand()%2!=0)
-			mon->coef=-mon->coef;
-		agregarMonomio(&(pol),mon);
-		grdIt--;
-	}
+	while(grdIt-->=0)
+		agregarMonomio(&(pol),crearMonomio(rand()%2==0?(rand()%maxCoef):-(rand()%maxCoef),grdIt+1));
 	return pol;
 }
 
@@ -381,20 +371,16 @@ void agregarMonomio(struct Polinomio **pol,struct Monomio *mon){
 	if(it==NULL){
 		crearPolinomio(pol);
 		(*pol)->monomio=mon;
-		(*pol)->sig=NULL;
 		return;
 	}
-	while(it!=NULL){
+	while(it!=NULL)
 		if(it->sig==NULL){
 			crearPolinomio(&(it->sig));
 			it->sig->monomio=mon;
-			it->sig->sig=NULL;
 			return;
 		}
-		else{
+		else
 			it=it->sig;
-		}
-	}
 	return;
 }
 
@@ -412,22 +398,14 @@ void agregarMonomio(struct Polinomio **pol,struct Monomio *mon){
  */
 void imprimirPolinomio(struct Polinomio *pol){
 	struct Polinomio *it=pol;
-	struct Monomio *mon;
 	while(it!=NULL && it->monomio->coef==0)
 		it=it->sig;
 	if(it!=NULL){
-		mon=it->monomio;
-		if(mon->coef!=0)
-			printf("%ldx^%ld",mon->coef,mon->grd);
-		it=it->sig;
-		while(it!=NULL){
-			mon=it->monomio;
-			if(mon->coef>0)
-				printf("+%ldx^%ld",mon->coef,mon->grd);
-			else if(mon->coef<0)
-				printf("%ldx^%ld",mon->coef,mon->grd);
-			it=it->sig;
-		}
+		if(it->monomio->coef!=0)
+			printf("%ldx^%ld",it->monomio->coef,it->monomio->grd);
+		while((it=it->sig)!=NULL)
+			if(it->monomio->coef!=0)
+				printf("%+ldx^%ld",it->monomio->coef,it->monomio->grd);
 		printf("\n");
 	}
 	else 
@@ -477,14 +455,14 @@ struct Monomio *copiarMonomio(struct Monomio *mon){
 
 
 /**
- * sumaMons:
+ * sumarMonomios:
  * 
  * Función que recibe y suma (o resta, dependiendo del parámetro signo) dos 
  * monomios molp y molq. 
  * 
  * Retorna una nueva estructura correspondiente a la suma.
  */
-struct Monomio *sumaMons(struct Monomio *molp, struct Monomio *molq,int signo){
+struct Monomio *sumarMonomios(struct Monomio *molp, struct Monomio *molq,int signo){
 	struct Monomio *suma=NULL;
 	if(molp->grd==molq->grd)
 		suma=crearMonomio(molp->coef+(signo * molq->coef),molp->grd);
